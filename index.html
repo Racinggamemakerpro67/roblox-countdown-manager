@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Roblox Countdown Manager</title>
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<style>
+:root{--bg:#000;--card:#000;--fg:#fff;--mut:#9b9bb0;--ln:#8b5cf6;--sh:#8b5cf6;--a:#8b5cf6;--b:#ff3d81;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+h1{display:flex;gap:12px;align-items:center;margin:4px 0 16px;font:900 26px/1.05 "Arial Black",Impact,system-ui,sans-serif;letter-spacing:-.5px}
+h1 svg{width:56px;height:56px;border-radius:14px;display:block;border:3px solid var(--ln);box-shadow:3px 3px 0 var(--sh);flex:none}
+section{background:var(--card);border:3px solid var(--ln);border-radius:14px;box-shadow:5px 5px 0 var(--sh);padding:14px;margin-bottom:18px}
+h2{font:900 17px/1 "Arial Black",Impact,system-ui,sans-serif;margin:0 0 12px}
+p{margin:10px 0 0}
+.row{display:flex;flex-wrap:wrap;gap:12px}.row>*{flex:1 1 150px}
+label{display:block;font-weight:600;font-size:13px;color:var(--mut);margin-bottom:4px}
+input,select{width:100%;padding:9px 10px;border:2px solid var(--ln);border-radius:8px;background:var(--bg);color:var(--fg);font:inherit}
+input[type=color]{padding:2px;height:40px}input[type=range]{padding:0}input[type=file]{display:none}
+input[type=checkbox]{width:auto;margin-right:6px}
+.drop{display:flex;align-items:center;justify-content:center;text-align:center;min-height:130px;margin:0;border:3px dashed var(--a);border-radius:12px;cursor:pointer;color:var(--fg);font-size:15px;background:var(--bg) center/cover no-repeat}
+button{border:3px solid var(--ln);border-radius:10px;padding:10px 14px;font:900 14px "Arial Black",Impact,system-ui,sans-serif;color:#14102b;background:#ffd23f;box-shadow:3px 3px 0 var(--sh);cursor:pointer}
+button:active{transform:translate(3px,3px);box-shadow:none}
+button.s{background:var(--card);color:var(--fg);padding:7px 10px;font-size:12px}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--b);outline-offset:2px}
+.live{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.live canvas{width:min(100%,240px);height:auto;border:3px solid var(--ln);border-radius:12px}
+#clock{font:900 clamp(34px,9vw,52px)/1 ui-monospace,Menlo,Consolas,monospace;background:linear-gradient(90deg,#22c55e,#eab308,#ef4444,#d946ef);-webkit-background-clip:text;background-clip:text;color:transparent}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+.grid figure{margin:0;display:flex;flex-direction:column;gap:6px}
+.grid canvas{width:100%;height:auto;border:3px solid var(--ln);border-radius:10px}
+.grid figure div{display:flex;gap:6px}.grid figure div button{flex:1}
+small{color:var(--mut)}
+#ck{display:block;width:120px;height:120px;margin-bottom:8px}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);max-width:90vw;background:#14102b;color:#fff;border:2px solid #fff;padding:9px 16px;border-radius:99px;opacity:0;transition:opacity .25s;pointer-events:none;text-align:center}
+#toast.on{opacity:1}
+</style></head><body><main>
+<h1><span id="ic"></span>Roblox Countdown Manager</h1>
+
+<section><h2>Your icons</h2>
+<div class="row">
+<label class="drop" id="d1" for="f1">Tap to add your current icon or photo</label>
+<label class="drop" id="d2" for="f2">Tap to add the new icon (shown after NOW)</label>
+</div>
+<input type="file" id="f1" accept="image/*"><input type="file" id="f2" accept="image/*">
+</section>
+
+<section><h2>Countdown steps</h2>
+<div class="row">
+<div><label for="steps">Steps, separated by commas</label><input id="steps" value="6h,4h,2h,1h,NOW"><small>Use d, h, m or s, like 90m. Any text without a number counts as the launch moment.</small></div>
+<div><label for="newlbl">Label on the new icon</label><input id="newlbl" value="NEW"></div>
+<div><label for="hold">Minutes the last step stays up</label><input id="hold" type="number" min="0" step="any" value="60"></div>
+<div><label for="when">Launch time</label><input id="when" type="datetime-local" step="1"></div>
+</div>
+<p><button id="demo" class="s">Run a 1 minute demo</button></p>
+</section>
+
+<section><h2>Badge style</h2>
+<div class="row">
+<div><label for="size">Image size</label><select id="size"><option value="512x512">Icon 512×512</option><option value="1280x720">Thumbnail 1280×720</option></select></div>
+<div><label for="pos">Badge position</label><select id="pos"><option value="tl">Top left</option><option value="tr" selected>Top right</option><option value="bl">Bottom left</option><option value="br">Bottom right</option><option value="bc">Bottom center</option><option value="cc">Center</option></select></div>
+<div><label for="sz">Badge size</label><input id="sz" type="range" min="6" max="30" value="13"></div>
+<div><label for="bg">Badge color</label><input id="bg" type="color" value="#000000"></div>
+<div><label><input id="ac" type="checkbox" checked>Clock ring colors by step</label></div>
+</div>
+</section>
+
+<section><h2>Live, it switches by itself</h2>
+<div class="live"><canvas id="lv"></canvas>
+<div><svg id="ck" viewBox="0 0 120 120"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22c55e"/><stop offset=".35" stop-color="#eab308"/><stop offset=".7" stop-color="#ef4444"/><stop offset="1" stop-color="#d946ef"/></linearGradient></defs><circle cx="60" cy="60" r="54" fill="#000" stroke="url(#rg)" stroke-width="8"/><circle cx="60" cy="60" r="44" fill="none" stroke="#fff" stroke-width="5" stroke-dasharray="1.5 21.54" stroke-dashoffset=".75"/><g stroke-linecap="round"><line id="hh" x1="60" y1="60" x2="60" y2="38" stroke="#fff" stroke-width="6"/><line id="mh" x1="60" y1="60" x2="60" y2="26" stroke="#fff" stroke-width="4"/><line id="sh" x1="60" y1="66" x2="60" y2="20" stroke="#ff3d81" stroke-width="2"/></g><circle cx="60" cy="60" r="4" fill="#ff3d81"/></svg><div id="clock">--:--:--</div><p id="nxt"></p>
+<p><label><input id="auto" type="checkbox" checked>Copy the image automatically at each change</label></p>
+<p class="row"><button id="cp">Copy current</button><button id="sv" class="s">Save current</button></p></div></div>
+</section>
+
+<section><h2>All images</h2>
+<div id="grid" class="grid"></div>
+<p class="row"><button id="all">Download all</button><button id="dlIcon" class="s">Download app icon</button></p>
+</section>
+</main><div id="toast"></div>
+<script>
+const $=s=>document.querySelector(s),p2=n=>String(n).padStart(2,"0");
+const ICON='<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d28d9"/><stop offset=".55" stop-color="#ff3d81"/><stop offset="1" stop-color="#ffd23f"/></linearGradient></defs><rect x="8" y="8" width="496" height="496" rx="104" fill="#000" stroke="url(#g)" stroke-width="16"/><rect x="214" y="70" width="84" height="46" rx="14" fill="#fff"/><circle cx="256" cy="288" r="160" fill="#0d0d14"/><g fill="none" stroke-width="30" transform="rotate(-90 256 288)"><circle cx="256" cy="288" r="132" stroke="#22c55e" stroke-dasharray="190 640" stroke-dashoffset="0"/><circle cx="256" cy="288" r="132" stroke="#eab308" stroke-dasharray="190 640" stroke-dashoffset="-207"/><circle cx="256" cy="288" r="132" stroke="#ef4444" stroke-dasharray="190 640" stroke-dashoffset="-415"/><circle cx="256" cy="288" r="132" stroke="#d946ef" stroke-dasharray="190 640" stroke-dashoffset="-622"/></g><path d="M256 288V206M256 288l54 34" stroke="#fff" stroke-width="26" stroke-linecap="round" fill="none"/><circle cx="256" cy="288" r="18" fill="#fff"/></svg>';
+const PAL=["#22c55e","#eab308","#f97316","#ef4444","#d946ef","#06b6d4"];
+let base,neu,stages=[],plain,cur=-2,tt;
+const lv=$("#lv");
+function toast(m){const e=$("#toast");e.textContent=m;e.classList.add("on");clearTimeout(tt);tt=setTimeout(()=>e.classList.remove("on"),2400)}
+const secs=t=>{const m=/^(\d+(?:\.\d+)?)\s*([dhms])?/i.exec(t.trim());return m?+m[1]*{d:86400,h:3600,m:60,s:1}[(m[2]||"h").toLowerCase()]:0};
+const fmt=ms=>{let s=Math.max(0,Math.floor(ms/1e3));const d=Math.floor(s/86400);s%=86400;return(d?d+"d ":"")+p2(Math.floor(s/3600))+":"+p2(Math.floor(s%3600/60))+":"+p2(s%60)};
+const col=i=>$("#ac").checked?PAL[i%PAL.length]:"#fff";
+const png=c=>new Promise(r=>c.toBlob(r,"image/png"));
+async function save(c,n){const a=document.createElement("a");a.href=URL.createObjectURL(await png(c));a.download=n.replace(/[^\w-]+/g,"_")+".png";a.click()}
+async function copy(c,n,auto){try{await navigator.clipboard.write([new ClipboardItem({"image/png":png(c)})]);toast("Copied “"+n+"”")}catch(e){if(auto)toast("Step changed – tap Copy current");else{save(c,n);toast("Clipboard blocked, saved the file instead")}}}
+function draw(img,t,c,w,h,k){
+ const v=document.createElement("canvas");v.width=w;v.height=h;const x=v.getContext("2d");
+ if(img){const q=Math.max(w/img.width,h/img.height),iw=img.width*q,ih=img.height*q;x.drawImage(img,(w-iw)/2,(h-ih)/2,iw,ih)}
+ else{const g=x.createLinearGradient(0,0,w,h);g.addColorStop(0,"#6d28d9");g.addColorStop(1,"#ff3d81");x.fillStyle=g;x.fillRect(0,0,w,h)}
+ if(!t)return v;
+ let f=Math.min(w,h)*$("#sz").value/100;const set=()=>{x.font="900 "+f+"px 'Arial Black',Impact,system-ui,sans-serif"};
+ set();while(x.measureText(t).width+f>w*.92&&f>12){f-=4;set()}
+ const cl=k!=null,r=f*.6,bw=Math.max(x.measureText(t).width+f,cl?f*1.9:0),bh=cl?f*2.95:f*1.5,m=f*.3,P=$("#pos").value;
+ const X=P[1]=="l"?m:P[1]=="r"?w-bw-m:(w-bw)/2,Y=P[0]=="t"?m:P[0]=="b"?h-bh-m:(h-bh)/2,cx=X+bw/2,cy=Y+f*.3+r;
+ x.shadowColor="rgba(0,0,0,.6)";x.shadowBlur=f*.3;x.shadowOffsetY=f*.1;x.fillStyle=$("#bg").value;x.beginPath();x.roundRect(X,Y,bw,bh,f*.4);x.fill();
+ x.shadowColor="transparent";x.lineWidth=f*.1;x.strokeStyle=c;x.stroke();
+ if(cl){x.lineWidth=f*.13;x.beginPath();x.arc(cx,cy,r,0,7);x.stroke();
+  x.strokeStyle="#fff";x.lineCap="round";
+  [[(k%12)/12*6.2832,.5,.12],[0,.78,.09]].forEach(([a,l,u])=>{x.lineWidth=f*u;x.beginPath();x.moveTo(cx,cy);x.lineTo(cx+Math.sin(a)*r*l,cy-Math.cos(a)*r*l);x.stroke()});
+  x.fillStyle="#fff";x.beginPath();x.arc(cx,cy,f*.07,0,7);x.fill()}
+ x.textAlign="center";x.textBaseline="middle";x.fillStyle="#fff";x.fillText(t,cx,cl?cy+r+f*.62:Y+bh/2+f*.05);return v}
+function build(){
+ const [w,h]=$("#size").value.split("x").map(Number);
+ stages=$("#steps").value.split(",").map(s=>s.trim()).filter(Boolean).map(t=>({t,off:secs(t)})).sort((a,b)=>b.off-a.off);
+ stages.push({t:$("#newlbl").value.trim()||"NEW",off:-$("#hold").value*60});
+ stages.forEach((s,i)=>{const e=i==stages.length-1;s.cv=draw(e?neu||base:base,s.t,col(i),w,h,e?null:s.off/3600)});
+ plain=draw(base,"",0,w,h);
+ const g=$("#grid");g.innerHTML="";
+ stages.forEach((s,i)=>{const f=document.createElement("figure"),c=document.createElement("small"),b=document.createElement("div");
+  c.textContent=s.t;
+  [["Copy",()=>copy(s.cv,s.t)],["Save",()=>save(s.cv,(i+1)+"-"+s.t)]].forEach(([n,fn])=>{const k=document.createElement("button");k.textContent=n;k.className="s";k.onclick=fn;b.append(k)});
+  f.append(s.cv,c,b);g.append(f)});
+ cur=-2;tick()}
+function show(i,auto){const s=stages[i],c=s?s.cv:plain;lv.width=c.width;lv.height=c.height;lv.getContext("2d").drawImage(c,0,0);if(auto&&s&&$("#auto").checked)copy(c,s.t,true)}
+function hands(ms){const s=Math.floor(ms/1e3),h=Math.floor(s/3600),m=Math.floor(s%3600/60),c=s%60,r=(i,a)=>$("#"+i).setAttribute("transform","rotate("+a+" 60 60)");r("hh",h%12*30+m/2);r("mh",m*6+c/10);r("sh",c*6)}
+function tick(){
+ const L=new Date($("#when").value).getTime();if(!L||!stages.length)return;
+ const n=Date.now(),st=stages.map(s=>L-s.off*1e3);let i=-1;st.forEach((t,k)=>{if(n>=t)i=k});
+ $("#clock").textContent=L>n?fmt(L-n):"LIVE";hands(Math.max(0,L-n));
+ $("#nxt").textContent=st[i+1]?"Next: “"+stages[i+1].t+"” in "+fmt(st[i+1]-n):"Finished – the new icon is showing";
+ if(i!==cur){const was=cur;cur=i;show(i,was!==-2)}}
+function pick(f,d,set){f.onchange=()=>{const file=f.files[0];if(!file)return;const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{set(i);d.style.backgroundImage="url("+r.result+")";d.textContent="";build()};i.src=r.result};r.readAsDataURL(file)}}
+pick($("#f1"),$("#d1"),i=>base=i);pick($("#f2"),$("#d2"),i=>neu=i);
+["steps","newlbl","hold","bg","sz","pos","size","ac"].forEach(k=>$("#"+k).oninput=build);
+$("#when").oninput=tick;
+$("#cp").onclick=()=>copy(lv,"current");$("#sv").onclick=()=>save(lv,"current");
+$("#all").onclick=()=>stages.forEach((s,i)=>setTimeout(()=>save(s.cv,(i+1)+"-"+s.t),i*400));
+$("#dlIcon").onclick=()=>{const i=new Image();i.onload=()=>{const c=document.createElement("canvas");c.width=c.height=512;c.getContext("2d").drawImage(i,0,0,512,512);save(c,"countdown-manager-icon")};i.src="data:image/svg+xml,"+encodeURIComponent(ICON)};
+const loc=t=>new Date(t-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,19);
+$("#demo").onclick=()=>{$("#steps").value="40s,25s,10s,NOW";$("#hold").value=.3;$("#when").value=loc(Date.now()+55e3);build()};
+$("#ic").innerHTML=ICON;$("#when").value=loc(Date.now()+6.02*36e5);build();setInterval(tick,1000);
+if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js");
+</script></body></html>
